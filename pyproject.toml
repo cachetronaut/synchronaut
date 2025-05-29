@@ -1,6 +1,6 @@
 [project]
 name = "synchronaut"
-version = "0.1.0"
+version = "0.1.1"
 description = "A “write-once, run‐anywhere” sync/async bridge that’s thread-safe, decorator-driven, and plays nicely in FastAPI (or other frameworks) & with DB connections."
 readme = "README.md"
 authors = [
@@ -37,4 +37,28 @@ dev = [
     "pytest-asyncio>=1.0.0",
     "pytest-trio>=0.8.0",
     "uvicorn>=0.34.2",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Internet",
+    "Environment :: Web Environment",
+    "Framework :: AsyncIO",
+    "Framework :: Trio",
+    "Framework :: AnyIO",
+    "Framework :: FastAPI",
+    "Framework :: Pytest",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Typing :: Typed",
+    "Natural Language :: English",
 ]
