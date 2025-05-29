@@ -6,6 +6,8 @@
 - Context-var propagation across threads  
 - Customizable timeouts with `SmartCallTimeout`  
 
+[![Package Version](https://img.shields.io/pypi/v/synchronaut.svg)](https://pypi.org/project/synchronaut/) | [![Supported Python Versions](https://img.shields.io/badge/Python->=3.10-blue?logo=python&logoColor=white)](https://pypi.org/project/synchronaut/) | [![Pepy Total Downloads](https://img.shields.io/pepy/dt/synchronaut?color=2563EB&cacheSeconds=3600)](https://pepy.tech/projects/synchronaut) | ![License](https://img.shields.io/github/license/cachetronaut/synchronaut) | ![GitHub Last Commit](https://img.shields.io/github/last-commit/cachetronaut/synchronaut)  | ![Status](https://img.shields.io/pypi/status/synchronaut) | [![Dynamic TOML Badge](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcachetronaut%2Fsynchronaut%2Frefs%2Fheads%2Fmain%2Fpyproject.toml&query=project.version&prefix=v&style=flat&logo=github&logoColor=1F51FF&label=synchronaut&labelColor=silver&color=1F51FF)](https://github.com/cachetronaut/synchronaut)
+
 ## Quickstart
 Install:
 ```bash
