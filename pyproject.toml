@@ -1,0 +1,40 @@
+[project]
+name = "synchronaut"
+version = "0.1.0"
+description = "A “write-once, run‐anywhere” sync/async bridge that’s thread-safe, decorator-driven, and plays nicely in FastAPI (or other frameworks) & with DB connections."
+readme = "README.md"
+authors = [
+    { name = "cachetronaut", email = "abrahamacastro+code@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "anyio>=4.9.0",
+    "trio>=0.30.0",
+]
+
+[project.scripts]
+synchronaut = "synchronaut:main"
+
+[project.urls]
+Homepage = "https://github.com/cachetronaut/synchronaut"
+Issues = "https://github.com/cachetronaut/synchronaut/issues"
+Documentation = "https://github.com/cachetronaut/synchronaut"
+Repository = "https://github.com/cachetronaut/synchronaut"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "fastapi>=0.115.12",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.5",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=1.0.0",
+    "pytest-trio>=0.8.0",
+    "uvicorn>=0.34.2",
+]
