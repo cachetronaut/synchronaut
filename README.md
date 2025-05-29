@@ -1,10 +1,10 @@
 ## `synchronaut` Overview
 **`synchronaut`** is a tiny bridge to write your business logic once and run it in both sync and async contexts—thread-safe, decorator-driven, and DB-friendly. It provides:
-- A single `smart_call` entrypoint for all sync↔️async combinations  
+- A single `call_any` entrypoint for all sync↔️async combinations  
 - A decorator `@synchronaut(...)` with `.sync` / `.async_` bypass methods  
-- Batch helper `smart_map`  
+- Batch helper `call_map`  
 - Context-var propagation across threads  
-- Customizable timeouts with `SmartCallTimeout`  
+- Customizable timeouts with `CallAnyTimeout`  
 
 [![Package Version](https://img.shields.io/pypi/v/synchronaut.svg)](https://pypi.org/project/synchronaut/) | [![Supported Python Versions](https://img.shields.io/badge/Python->=3.10-blue?logo=python&logoColor=white)](https://pypi.org/project/synchronaut/) | [![Pepy Total Downloads](https://img.shields.io/pepy/dt/synchronaut?color=2563EB&cacheSeconds=3600)](https://pepy.tech/projects/synchronaut) | ![License](https://img.shields.io/github/license/cachetronaut/synchronaut) | ![GitHub Last Commit](https://img.shields.io/github/last-commit/cachetronaut/synchronaut)  | ![Status](https://img.shields.io/pypi/status/synchronaut) | [![Dynamic TOML Badge](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcachetronaut%2Fsynchronaut%2Frefs%2Fheads%2Fmain%2Fpyproject.toml&query=project.version&prefix=v&style=flat&logo=github&logoColor=1F51FF&label=synchronaut&labelColor=silver&color=1F51FF)](https://github.com/cachetronaut/synchronaut)
 
@@ -18,7 +18,7 @@ Create `quickstart.py`:
 import time
 import asyncio
 
-from synchronaut import synchronaut, smart_call, smart_map, SmartCallTimeout
+from synchronaut import synchronaut, call_any, call_map, CallAnyTimeout
 
 # ——— plain functions ———
 def sync_add(a, b):
@@ -39,17 +39,17 @@ async def dec_async_add(a, b):
 async def main():
     # sync → sync
     print('sync_add:', sync_add(1, 2))
-    print('smart_call(sync_add):', await smart_call(sync_add, 3, 4))
+    print('call_any(sync_add):', await call_any(sync_add, 3, 4))
 
     # sync → async (in async context, sync funcs auto-offload)
-    print('offloaded sync_add:', await smart_call(sync_add, 5, 6))
+    print('offloaded sync_add:', await call_any(sync_add, 5, 6))
 
     # async → async
     print('async_add:', await async_add(7, 8))
-    print('smart_call(async_add):', await smart_call(async_add, 7, 8))
+    print('call_any(async_add):', await call_any(async_add, 7, 8))
 
     # batch helper in async
-    print('smart_map:', await smart_map([sync_add, async_add], 4, 5))
+    print('call_map:', await call_map([sync_add, async_add], 4, 5))
 
     # decorator shortcuts in async
     print('await dec_sync_add.async_:', await dec_sync_add.async_(6, 7))
@@ -57,14 +57,14 @@ async def main():
 
     # timeout demo (pure-sync offload)
     try:
-        await smart_call(lambda: time.sleep(2), timeout=0.5)
-    except SmartCallTimeout as e:
+        await call_any(lambda: time.sleep(2), timeout=0.5)
+    except CallAnyTimeout as e:
         print('Timeout caught:', e)
 
 if __name__ == '__main__':
     # sync-land examples
     print('dec_sync_add(2,3):', dec_sync_add(2, 3))
-    print('smart_call(async_add) in sync:', smart_call(async_add, 9, 10))
+    print('call_any(async_add) in sync:', call_any(async_add, 9, 10))
     # then run the async demonstrations
     asyncio.run(main())
 ```
@@ -76,11 +76,11 @@ Expected output:
 ```bash
 dec_sync_add(2,3): 5
 sync_add: 3
-smart_call(sync_add): 7
+call_any(sync_add): 7
 offloaded sync_add: 11
 async_add: 15
-smart_call(async_add): 15
-smart_map: [9, 9]
+call_any(async_add): 15
+call_map: [9, 9]
 await dec_sync_add.async_: 13
 await dec_async_add: 17
 Timeout caught: Function <lambda> timed out after 0.5s
@@ -184,11 +184,11 @@ Global again, user_id: 42
 Inside thread, user_id: 42
 ```
 ## Advanced
-All these options are callable via `smart_call(...)` or the `@synchronaut(...)` decorator:
-- **`timeout=`**: raises `SmartCallTimeout` if the call exceeds N seconds
+All these options are callable via `call_any(...)` or the `@synchronaut(...)` decorator:
+- **`timeout=`**: raises `CallAnyTimeout` if the call exceeds N seconds
 - **`force_offload=True`**: always run sync funcs in the background loop (enables timely cancellation)
 - **`reuse_loop=True`**: submit async coroutines to a long-lived background loop
-- **`smart_map([...], *args)`**: runs in parallel in async context, sequentially in sync context
+- **`call_map([...], *args)`**: runs in parallel in async context, sequentially in sync context
 - **Context propagation**:
     - `set_request_ctx()` / `get_request_ctx()` to set and read a global `ContextVar`
     - `request_context({...})` context-manager to temporarily override
