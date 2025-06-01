@@ -1,18 +1,22 @@
 ## `synchronaut` Overview
 **`synchronaut`** is a tiny bridge to write your business logic once and run it in both sync and async contexts—thread-safe, decorator-driven, and DB-friendly. It provides:
-- A single `call_any` entrypoint for all sync↔️async combinations  
-- A decorator `@synchronaut(...)` with `.sync` / `.async_` bypass methods  
-- Batch helper `call_map`  
-- Context-var propagation across threads  
-- Customizable timeouts with `CallAnyTimeout`  
+- A single `call_any` entrypoint for all sync↔️async combinations, where you can optionally pass `executor=`
+- A decorator `@synchronaut(...)` with `.sync` / `.async_` bypass methods
+- Batch helper `call_map`
+- Context-var propagation across threads
+- Customizable timeouts with `CallAnyTimeout`
 
 [![Package Version](https://img.shields.io/pypi/v/synchronaut.svg)](https://pypi.org/project/synchronaut/) | [![Supported Python Versions](https://img.shields.io/badge/Python->=3.10-blue?logo=python&logoColor=white)](https://pypi.org/project/synchronaut/) | [![Pepy Total Downloads](https://img.shields.io/pepy/dt/synchronaut?color=2563EB&cacheSeconds=3600)](https://pepy.tech/projects/synchronaut) | ![License](https://img.shields.io/github/license/cachetronaut/synchronaut) | ![GitHub Last Commit](https://img.shields.io/github/last-commit/cachetronaut/synchronaut)  | ![Status](https://img.shields.io/pypi/status/synchronaut) | [![Dynamic TOML Badge](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcachetronaut%2Fsynchronaut%2Frefs%2Fheads%2Fmain%2Fpyproject.toml&query=project.version&prefix=v&style=flat&logo=github&logoColor=1F51FF&label=synchronaut&labelColor=silver&color=1F51FF)](https://github.com/cachetronaut/synchronaut)
 
 ## Quickstart
 Install:
 ```bash
+# “standard” install (no uvloop):
 pip install synchronaut
-````
+
+# “fast” (with uvloop) for maximum asyncio performance:
+pip install synchronaut[fast]
+```
 Create `quickstart.py`:
 ```python
 import time
@@ -128,6 +132,7 @@ def get_user(user_id: int, db: DummyDB = Depends(get_db_async)) -> User:
 
 @app.get('/')
 async def hello():
+    return {"Hello, @syncronauts!"}
 
 @app.get('/users/{user_id}', response_model=User)
 async def read_user(user: User = Depends(get_user)):
@@ -144,6 +149,11 @@ When you go to http://127.0.0.1:8000/users/1 -> {'id': 1, 'name': 'Alice'}
 When you go to http://127.0.0.1:8000/users/2 -> {'id': 2, 'name': 'Bob'}
 When you go to http://127.0.0.1:8000/users/3 -> {"detail":"User not found"}
 ```
+> **Note:** if you ever need to offload into your own thread‐pool, you can write
+> ```python
+> call_any(some_sync_fn, arg1, arg2, executor=my_custom_executor)
+> ```
+> rather than relying on the built-in default.
 ## Context Propagation
 Put this in `ctx_prop.py`:
 ```python
@@ -187,7 +197,7 @@ Inside thread, user_id: 42
 All these options are callable via `call_any(...)` or the `@synchronaut(...)` decorator:
 - **`timeout=`**: raises `CallAnyTimeout` if the call exceeds N seconds
 - **`force_offload=True`**: always run sync funcs in the background loop (enables timely cancellation)
-- **`reuse_loop=True`**: submit async coroutines to a long-lived background loop
+- **`executor=`**: send offloaded sync work into a caller-provided `ThreadPoolExecutor` (instead of the default)
 - **`call_map([...], *args)`**: runs in parallel in async context, sequentially in sync context
 - **Context propagation**:
     - `set_request_ctx()` / `get_request_ctx()` to set and read a global `ContextVar`
@@ -197,9 +207,10 @@ All these options are callable via `call_any(...)` or the `@synchronaut(...)` de
 1. **Decorator overhead**: each call does an inspect/async-check (nanoseconds–µs). In ultra-hot loops, consider a bypass.
 2. **Timeouts on sync code**: pure-sync calls only respect `timeout` if offloaded—otherwise they block until completion.
 3. **Background loop lifecycle**: offloads and `.sync` bypass use our single background loop; it lives until process exit.
-4. **ContextVar propagation**: manual threads must use our `spawn_thread_with_ctx`.
-5. **Non-asyncio stacks**: `_in_async_context` recognizes only asyncio and Trio. Other event loops may mis-route.
-6. **Tracebacks**: decorators + offloads can obscure original frames. Use logging or `inspect.trace()` for debugging.
+4. **Custom executor**: if you pass `executor=my_executor`, that executor will actually be used for offloading. If you forget, all work goes into the built-in `_SHARED_EXECUTOR`.
+5. **ContextVar propagation**: manual threads must use our `spawn_thread_with_ctx`.
+6. **Non-asyncio stacks**: `_in_async_context` recognizes only asyncio and Trio. Other event loops may mis-route.
+7. **Tracebacks**: decorators + offloads can obscure original frames. Use logging or `inspect.trace()` for debugging.
 ## ✅ When **to** use synchronaut
 - **I/O-bound web services** (DB calls, HTTP, file I/O)
 - **Mixed sync/async code-bases** (one API, two contexts)
@@ -209,7 +220,6 @@ All these options are callable via `call_any(...)` or the `@synchronaut(...)` de
 1. **CPU-bound tight loops** where microseconds matter
 2. **Pure-sync or pure-async projects** (no context switching)
 3. **Non-asyncio async frameworks** (e.g. Curio)
-4. **Very high-volume coroutine batches** in sync code without `reuse_loop`
-5. **Strict loop-lifecycle environments** that forbid background loops
+4. **Strict loop-lifecycle environments** that forbid background loops
 
-> By tuning `timeout`, `force_offload`, `reuse_loop`, or using the `.sync`/`.async_` bypasses, you get seamless sync↔️async interoperability without rewriting your core logic.
+> By tuning `timeout`, `force_offload`, or using the `.sync`/`.async_` bypasses, you get seamless sync↔️async interoperability without rewriting your core logic.
