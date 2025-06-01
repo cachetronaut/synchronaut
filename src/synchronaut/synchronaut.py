@@ -1,14 +1,15 @@
 import inspect
 import asyncio
+
 from functools import wraps
+from concurrent.futures import ThreadPoolExecutor
 from synchronaut.core import call_any, _start_background_loop
 
 def synchronaut(
     *,
-    timeout: float = None,
-    executor = None,
-    force_offload: bool = False,
-    reuse_loop: bool = False
+    timeout: float | None = None,
+    executor: ThreadPoolExecutor | None = None,
+    force_offload: bool | None = False,
 ):
     '''
     Decorator factory exposing the same options as call_any.
@@ -23,7 +24,6 @@ def synchronaut(
                 timeout=timeout,
                 executor=executor,
                 force_offload=force_offload,
-                reuse_loop=reuse_loop,
                 **kwargs
             )
 
@@ -49,7 +49,6 @@ def synchronaut(
                     timeout=timeout,
                     executor=executor,
                     force_offload=True,
-                    reuse_loop=reuse_loop,
                     **kwargs
                 )
             sync_wrapper.sync = func # original sync func

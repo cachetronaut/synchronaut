@@ -41,7 +41,7 @@ def test_async_to_sync():
     assert call_any(async_add, 7, 8) == 15
 
 def test_async_to_sync_with_reuse_loop():
-    assert call_any(async_add, 9, 10, reuse_loop=True) == 19
+    assert call_any(async_add, 9, 10) == 19
 
 # ––– Timeout behavior ––
 
