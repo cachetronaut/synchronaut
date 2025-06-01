@@ -1,6 +1,6 @@
 [project]
 name = "synchronaut"
-version = "0.1.2"
+version = "0.2.0"
 description = "A “write-once, run‐anywhere” sync/async bridge that’s thread-safe, decorator-driven, and plays nicely in FastAPI (or other frameworks) & with DB connections."
 readme = "README.md"
 authors = [
@@ -9,7 +9,61 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "anyio>=4.9.0",
+    "asyncio>=3.4.3",
     "trio>=0.30.0",
+]
+
+keywords = [
+  "synchronaut",
+  "sync",
+  "async",
+  "synchronous",
+  "asynchronous",
+  "concurrency",
+  "concurrent",
+  "thread",
+  "threading",
+  "thread-safe",
+  "thread-pool",
+  "executor",
+  "offload",
+  "offloading",
+  "timeout",
+  "timeouts",
+  "call_any",
+  "call_map",
+  "decorator",
+  "decorators",
+  "fastapi",
+  "pydantic",
+  "web",
+  "web-services",
+  "api",
+  "io-bound",
+  "database",
+  "db",
+  "contextvar",
+  "context-vars",
+  "context-propagation",
+  "ContextVar",
+  "request-context",
+  "spawn-thread-with-ctx",
+  "utility",
+  "library",
+  "package",
+  "python",
+  "asyncio",
+  "uvloop",
+  "trio",
+  "anyio",
+  "event-loop",
+  "task-scheduling",
+  "cancellation",
+  "structured-concurrency",
+  "fastio",
+  "hybrid-sync-async",
+  "interop",
+  "interop-library"
 ]
 
 classifiers = [
@@ -44,6 +98,11 @@ Homepage = "https://github.com/cachetronaut/synchronaut"
 Issues = "https://github.com/cachetronaut/synchronaut/issues"
 Documentation = "https://github.com/cachetronaut/synchronaut"
 Repository = "https://github.com/cachetronaut/synchronaut"
+
+[project.optional-dependencies]
+fast = [
+    "uvloop>=0.21.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
