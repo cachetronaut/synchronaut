@@ -1,6 +1,6 @@
 [project]
 name = "synchronaut"
-version = "0.2.0"
+version = "0.3.0"
 description = "A “write-once, run‐anywhere” sync/async bridge that’s thread-safe, decorator-driven, and plays nicely in FastAPI (or other frameworks) & with DB connections."
 readme = "README.md"
 authors = [
