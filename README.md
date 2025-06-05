@@ -380,20 +380,6 @@ trio.run(trio_main)
 [25, 7, CallAnyTimeout('Function async_square timed out after 0.01s')]
 ```
 
-## Advanced
-
-All these options are callable via `call_any(...)` or the `@synchronaut(...)` decorator:
-
-* **`timeout=`**: raises `CallAnyTimeout` if the call exceeds N seconds
-* **`force_offload=True`**: always run sync funcs in the background loop (enables timely cancellation)
-* **`executor=`**: send offloaded sync work into a caller-provided `ThreadPoolExecutor` (instead of the default)
-* **`call_map([...], *args)`**: runs in parallel in async context, sequentially in sync context
-* **Context propagation**:
-
-  * `set_request_ctx()` / `get_request_ctx()` to set and read a global `ContextVar`
-  * `request_context({...})` context-manager to temporarily override
-  * `spawn_thread_with_ctx(fn, *args)` to ensure `ContextVar` state flows into threads
-
 ## ⚙️ How It Works
 
 1. **Signature**
@@ -484,6 +470,20 @@ All these options are callable via `call_any(...)` or the `@synchronaut(...)` de
 
    * Calls are run sequentially under Trio’s task runner.
    * If any individual call raises, it’s either captured (if `return_exceptions=True`) or re‐raised.
+
+## Advanced
+
+All these options are callable via `call_any(...)` or the `@synchronaut(...)` decorator:
+
+* **`timeout=`**: raises `CallAnyTimeout` if the call exceeds N seconds
+* **`force_offload=True`**: always run sync funcs in the background loop (enables timely cancellation)
+* **`executor=`**: send offloaded sync work into a caller-provided `ThreadPoolExecutor` (instead of the default)
+* **`call_map([...], *args)`**: runs in parallel in async context, sequentially in sync context
+* **Context propagation**:
+
+  * `set_request_ctx()` / `get_request_ctx()` to set and read a global `ContextVar`
+  * `request_context({...})` context-manager to temporarily override
+  * `spawn_thread_with_ctx(fn, *args)` to ensure `ContextVar` state flows into threads
 
 ## ⚠️ Gotchas
 
