@@ -155,17 +155,9 @@ def call_any(
                     ) from e
             return _aio_offload_with_timeout()
 
-        if force_offload:
-            return loop.run_in_executor(
-                target_exec, partial(func, *args, **kwargs)
-            )
-
-        async def _aio_direct():
-            return loop.run_in_executor(
-                target_exec, partial(func, *args, **kwargs)
-            )
-
-        return _aio_direct()
+        return loop.run_in_executor(
+            target_exec, partial(func, *args, **kwargs)
+        )
 
     elif mode == 'trio':
         # inside a Trio run loop
@@ -264,12 +256,12 @@ def call_map(
     '''
     mode = _in_async_context()
     if mode == 'asyncio':
-        return asyncio.gather(
-            *(call_any(
-                    f, *args, timeout=timeout, executor=executor, **kwargs
-                ) for f in funcs
+        async def _gather_all():
+            return await asyncio.gather(
+                *(call_any(f, *args, timeout=timeout, executor=executor, **kwargs)
+                for f in funcs)
             )
-        )
+        return _gather_all()
     elif mode == 'trio':
         async def _trio_batch():
             return [
@@ -320,7 +312,12 @@ def parallel_map(
             tasks = []
             for fn, args, kwargs, per_timeout in calls:
                 # wrap each call_any(...) so that exceptions can be caught if requested
-                async def _run_one(inner_fn=fn, inner_args=args, inner_kwargs=kwargs, inner_to=per_timeout):
+                async def _run_one(
+                    inner_fn=fn, 
+                    inner_args=args, 
+                    inner_kwargs=kwargs, 
+                    inner_to=per_timeout
+                ):
                     try:
                         return await call_any(
                             inner_fn, *inner_args,
@@ -336,12 +333,8 @@ def parallel_map(
                 # schedule it immediately
                 tasks.append(asyncio.create_task(_run_one()))
 
-            # use gather with/without return_exceptions per flag
-            if return_exceptions:
-                return await asyncio.gather(*tasks, return_exceptions=True)
-            else:
-                return await asyncio.gather(*tasks)
-
+            return await asyncio.gather(*tasks,
+                                        return_exceptions=return_exceptions)
         return _run_all_asyncio()
 
     # ─── Trio Mode ───
