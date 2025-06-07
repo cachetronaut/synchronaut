@@ -161,7 +161,10 @@ def call_any(
             )
 
         async def _aio_direct():
-            return func(*args, **kwargs)
+            return loop.run_in_executor(
+                target_exec, partial(func, *args, **kwargs)
+            )
+
         return _aio_direct()
 
     elif mode == 'trio':
