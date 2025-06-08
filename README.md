@@ -6,6 +6,7 @@
 * 🆕 A decorator `@synchronaut(...)` with `.sync` / `.async_` bypass methods
 * Batch helper `parallel_map` (aliased as `parallel_map`), with per-call timeouts and exception capture
 * Context-var propagation across threads
+* 🆕 **Enhanced event‐loop policy support**: synchronaut now defers/install `uvloop` only if you haven’t already, and exposes `get_preferred_loop()`, `is_uvloop()` & `has_uvloop_policy()` so it always joins your existing asyncio (or uvloop) event loop  
 * Customizable timeouts with `CallAnyTimeout`
 
 [![Package Version](https://img.shields.io/pypi/v/synchronaut.svg)](https://pypi.org/project/synchronaut/) | [![Supported Python Versions](https://img.shields.io/badge/Python->=3.10-blue?logo=python\&logoColor=white)](https://pypi.org/project/synchronaut/) | [![Pepy Total Downloads](https://img.shields.io/pepy/dt/synchronaut?color=2563EB\&cacheSeconds=3600)](https://pepy.tech/projects/synchronaut) | ![License](https://img.shields.io/github/license/cachetronaut/synchronaut) | ![GitHub Last Commit](https://img.shields.io/github/last-commit/cachetronaut/synchronaut)  | ![Status](https://img.shields.io/pypi/status/synchronaut) | [![Dynamic TOML Badge](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcachetronaut%2Fsynchronaut%2Frefs%2Fheads%2Fmain%2Fpyproject.toml\&query=project.version\&prefix=v\&style=flat\&logo=github\&logoColor=1F51FF\&label=synchronaut\&labelColor=silver\&color=1F51FF)](https://github.com/cachetronaut/synchronaut)
@@ -100,13 +101,12 @@ await dec_async_add: 17
 Timeout caught: Function <lambda> timed out after 0.5s
 ```
 
-> **Note:** if you ever need to offload into your own thread‐pool, you can write
->
-> ```python
-> call_any(some_sync_fn, arg1, arg2, executor=my_custom_executor)
-> ```
->
-> rather than relying on the built-in default.
+> **Notes:** 
+> - if you ever need to offload into your own thread‐pool, you can write the below rather than relying on the built-in default:
+> 	```python
+> 	call_any(some_sync_fn, arg1, arg2, executor=my_custom_executor)
+> 	```
+> - By tuning `timeout`, `force_offload`, or using the `.sync`/`.async_` bypasses, you get seamless sync↔️async interoperability without rewriting your core logic.
 
 ## FastAPI Integration
 
@@ -472,41 +472,34 @@ trio.run(trio_main)
    * If any individual call raises, it’s either captured (if `return_exceptions=True`) or re‐raised.
 
 ## Advanced
-
 All these options are callable via `call_any(...)` or the `@synchronaut(...)` decorator:
-
 * **`timeout=`**: raises `CallAnyTimeout` if the call exceeds N seconds
 * **`force_offload=True`**: always run sync funcs in the background loop (enables timely cancellation)
 * **`executor=`**: send offloaded sync work into a caller-provided `ThreadPoolExecutor` (instead of the default)
 * **`call_map([...], *args)`**: runs in parallel in async context, sequentially in sync context
 * **Context propagation**:
-
   * `set_request_ctx()` / `get_request_ctx()` to set and read a global `ContextVar`
   * `request_context({...})` context-manager to temporarily override
   * `spawn_thread_with_ctx(fn, *args)` to ensure `ContextVar` state flows into threads
 
 ## ⚠️ Gotchas
-
-1. **Decorator overhead**: each call does an inspect/async-check (nanoseconds–µs). In ultra-hot loops, consider a bypass.
-2. **Timeouts on sync code**: pure-sync calls only respect `timeout` if offloaded—otherwise they block until completion.
-3. **Background loop lifecycle**: offloads and `.sync` bypass use our single background loop; it lives until process exit.
-4. **Custom executor**: if you pass `executor=my_executor`, that executor will actually be used for offloading. If you forget, all work goes into the built-in `_SHARED_EXECUTOR`.
-5. **ContextVar propagation**: manual threads must use our `spawn_thread_with_ctx`.
-6. **Non-asyncio stacks**: `_in_async_context` recognizes only asyncio and Trio. Other event loops may mis‐route.
-7. **Tracebacks**: decorators + offloads can obscure original frames. Use logging or `inspect.trace()` for debugging.
+1. **Decorator overhead**: Each decorated call does an `inspect` + coroutine check (nanoseconds–µs). For ultra-hot loops, consider a bypass (`.sync` or `.async_`).
+2. **Timeouts on sync code**: Pure-sync functions only honor `timeout=` if they’re offloaded; otherwise they block until completion.
+3. **Background loop lifecycle**: All offloads and `.sync` bypasses run on the **preferred** loop returned by `get_preferred_loop()` (which now uses `new_event_loop()` under your installed policy). That loop is started once and lives until process exit—no hidden extra loops or deprecation warnings.
+4. **Custom executor**: Pass your own `ThreadPoolExecutor` via `executor=` to `call_any`/`parallel_map`; otherwise the built-in `_SHARED_EXECUTOR` is used.
+5. **Context-var propagation**: Only works if you use `spawn_thread_with_ctx` (or the decorator’s offload) to carry your `ContextVar` into threads.
+6. **Event-loop policy management**: Synchronaut will **warn** & install `uvloop` on first import *only* if you haven’t already set the uvloop policy—otherwise it simply joins *your* loop. Use `has_uvloop_policy()`/`is_uvloop()` to detect what you’ve got.
+7. **Non-asyncio stacks**: `_in_async_context()` recognizes only `asyncio` and `trio`. If you’re on some other event loop, calls may mis-route.
+8. **Tracebacks**: Decorators + offloads can obscure original frames. Enable debug logging or use `inspect.trace()` for deep dives.
 
 ## ✅ When **to** use synchronaut
-
 1. **I/O-bound web services** (DB calls, HTTP, file I/O)
 2. **Mixed sync/async code-bases** (one API, two contexts)
 3. **FastAPI / DI**: sync ORMs auto-offload under the hood
 4. **Context-scoped resources**: single “request context” across threads & coros
 
 ## 🚫 When **not** to use synchronaut
-
 1. **CPU-bound tight loops** where microseconds matter
 2. **Pure-sync or pure-async projects** (no context switching)
 3. **Non-asyncio async frameworks** (e.g. Curio)
 4. **Strict loop-lifecycle environments** that forbid background loops
-
-> By tuning `timeout`, `force_offload`, or using the `.sync`/`.async_` bypasses, you get seamless sync↔️async interoperability without rewriting your core logic.
