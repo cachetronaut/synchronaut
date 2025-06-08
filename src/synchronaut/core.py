@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import threading
+import logging
 
 from functools import partial, lru_cache
 from typing import Any, Callable
@@ -12,17 +13,12 @@ from concurrent.futures import (
 import anyio
 import trio
 
-# ─── If uvloop is installed, make it the default asyncio event loop ───
-try:
-    import uvloop
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-except ImportError:
-    pass
+from synchronaut import get_preferred_loop, is_uvloop
 
 # ─── Shared Global Resources ───
 _background_loop: asyncio.AbstractEventLoop | None = None
 _background_thread: threading.Thread | None = None
-_SHARED_EXECUTOR = ThreadPoolExecutor(max_workers=8)  # you can bump max_workers as needed
+_SHARED_EXECUTOR = ThreadPoolExecutor(max_workers=8)
 
 class CallAnyTimeout(Exception):
     '''Raised when call_any(...) exceeds the given timeout.'''
@@ -54,22 +50,30 @@ def _in_async_context() -> str | None:
         return None
 
 def _start_background_loop() -> asyncio.AbstractEventLoop:
-    '''
-    Lazily start one background asyncio loop in its own daemon thread.
-    All `run_coroutine_threadsafe(...)` calls will go here. Returns that loop.
-    '''
     global _background_loop, _background_thread
     if _background_loop is None:
-        loop = asyncio.new_event_loop()
+        # Pick up whatever loop the app is already using
+        loop = get_preferred_loop()
         _background_loop = loop
 
-        def _run_loop_forever():
-            asyncio.set_event_loop(loop)
-            loop.run_forever()
+        # If it isn't running yet, fire one up
+        if not loop.is_running():
+            def _run():
+                asyncio.set_event_loop(loop)
+                loop.run_forever()
+            thread = threading.Thread(target=_run, daemon=True)
+            thread.start()
+            _background_thread = thread
 
-        thread = threading.Thread(target=_run_loop_forever, daemon=True)
-        thread.start()
-        _background_thread = thread
+        # Debug/log to see what's happening
+        if is_uvloop(loop):
+            logging.debug(
+                'Synchronaut: re-using existing uvloop: %s', type(loop)
+            )
+        else:
+            logging.debug(
+                'Synchronaut: re-using default loop: %s', type(loop)
+            )
 
     return _background_loop
 
