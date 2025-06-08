@@ -1,16 +1,17 @@
 import asyncio
 import logging
+
+import textwrap
+
 from synchronaut.utils import get_preferred_loop, is_uvloop, has_uvloop_policy
 
 # ─── If uvloop is installed, make it the default asyncio event loop ───
 if not has_uvloop_policy():
-    logging.warning(
-            '''
-            ⚡️ Synchronaut: performance tip — installing uvloop for faster async 
-            scheduling. If you prefer your own event loop, set your policy before 
-            importing synchronaut.
-            '''
-        )
+    logging.warning(textwrap.dedent('''
+        ⚡️ Synchronaut: performance tip — installing uvloop for faster async scheduling.
+        If you prefer your own event loop, set your policy before importing synchronaut.
+    '''))
+
     try:
         import uvloop
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
