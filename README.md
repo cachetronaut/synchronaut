@@ -100,6 +100,14 @@ await dec_async_add: 17
 Timeout caught: Function <lambda> timed out after 0.5s
 ```
 
+> **Note:** if you ever need to offload into your own thread‐pool, you can write
+>
+> ```python
+> call_any(some_sync_fn, arg1, arg2, executor=my_custom_executor)
+> ```
+>
+> rather than relying on the built-in default.
+
 ## FastAPI Integration
 
 Copy this into `app.py`—it’ll just work once you `pip install synchronaut`:
@@ -167,14 +175,6 @@ When you go to http://127.0.0.1:8000/users/2 -> {'id': 2, 'name': 'Bob'}
 When you go to http://127.0.0.1:8000/users/3 -> {"detail":"User not found"}
 ```
 
-> **Note:** if you ever need to offload into your own thread‐pool, you can write
->
-> ```python
-> call_any(some_sync_fn, arg1, arg2, executor=my_custom_executor)
-> ```
->
-> rather than relying on the built-in default.
-
 ## Context Propagation
 
 Put this in `ctx_prop.py`:
@@ -224,7 +224,7 @@ Inside thread, user_id: 42
 
 ## Batch Helper: `parallel_map`
 
-A key feature in `synchronaut` is the ability to run multiple calls in parallel (in both sync and async contexts) with individual timeouts. This helper is exposed as `parallel_map` (aliased to `parallel_map` for backwards compatibility).
+A key feature that has the ability to run multiple calls in parallel (in both sync and async contexts) with individual timeouts.
 
 * In **sync-land**, all calls are submitted to a thread pool at once and run truly in parallel (up to `max_workers`).
 * In **`asyncio`-land**, each call is wrapped in an `asyncio.create_task(...)` and then awaited with a single `asyncio.gather(...)`.
